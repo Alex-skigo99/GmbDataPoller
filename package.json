@@ -1,0 +1,19 @@
+{
+  "name": "lambda-",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.787.0",
+    "@aws-sdk/client-sqs": "^3.787.0",
+    "axios": "^1.8.4",
+    "google-auth-library": "^9.15.1"
+  }
+}
