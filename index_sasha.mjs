@@ -93,12 +93,30 @@ const syncLocationDetailsToDatabase = async (gmbLocationId, gmbLocationData, org
     };
 
     const gmbStuffingData = [];
+    const gmbDataToPushToCheckSQS = []; // sasha
 
     gmbStuffingData.push({
         gmb_id: gmbLocationId,
         gmb_name: gmbLocationData?.title ?? null,
         description: gmbLocationData?.profile?.description ?? null,
     });
+
+    // sasha
+    gmbDataToPushToCheckSQS.push({
+        gmb_id: gmbLocationId,
+        primary_category: newData.primary_category,
+        additional_categories: newData.additional_categories,
+        service_areas: newData.service_areas,
+        website_uri: newData.website_uri,
+        regular_hours: newData.regular_hours,
+        region_code: newData.region_code,
+        address_lines: newData.address_lines,
+        locality: newData.locality,
+        sublocality: newData.sublocality,
+        postal_code: newData.postal_code,
+        description: newData.description,
+    });
+    // end sasha
 
     if (!gmbLocationData.business_name_keyword_stuffed_checked_at) {
         console.log("Sending to SQS to check for keyword stuffing");
@@ -115,6 +133,12 @@ const syncLocationDetailsToDatabase = async (gmbLocationId, gmbLocationData, org
     if (!existing) {
         await knex(DatabaseTableConstants.GMB_LOCATION_TABLE).insert(newData);
         console.log(`🆕 Inserted GMB Location: ${gmbLocationId}`);
+        // sasha
+        await SqsUtils.batchSendMessages(
+            gmbDataToPushToCheckSQS,
+            LayerConstants.GMB_DATA_CHECK_HANDLER_SQS_QUEUE,
+        );
+        // end sasha
         // need to fire websocket here to update front end.
     } else {
         let hasChanges = false;
@@ -254,6 +278,26 @@ const syncLocationDetailsToDatabase = async (gmbLocationId, gmbLocationData, org
             if (notificationsToInsert.length > 0) {
                 await knex(DatabaseTableConstants.NOTIFICATION_TABLE).insert(notificationsToInsert);
             }
+            // sasha
+            if (changes.some(change =>  
+                change.key === 'description' || 
+                change.key === 'primary_category' || 
+                change.key === 'additional_categories' || 
+                change.key === 'service_areas' || 
+                change.key === 'website_uri' || 
+                change.key === 'regular_hours' || 
+                change.key === 'region_code' || 
+                change.key === 'address_lines' || 
+                change.key === 'locality' || 
+                change.key === 'sublocality' || 
+                change.key === 'postal_code')) {
+                    await SqsUtils.batchSendMessages(
+                        gmbDataToPushToCheckSQS,
+                        LayerConstants.GMB_DATA_CHECK_HANDLER_SQS_QUEUE,
+                    );
+                    console.log("Changes Detected! Sending to SQS to check data.");
+            }
+            // end sasha
         } else {
             console.log(`✅ GMB Location already up to date: ${gmbLocationId}`);
         }
