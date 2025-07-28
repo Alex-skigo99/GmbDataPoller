@@ -442,7 +442,8 @@ export const handler = async (event) => {
     // do this by gmb locations table
     const locations = await knex(DatabaseTableConstants.GMB_LOCATION_ORGANIZATION_BRIDGE_TABLE);
 
-    const allMediaMessages = [];
+    // const allMediaMessages = [];
+    const allMessages = []; // sasha
 
     for (const location of locations) {
         console.log("Processing location", location);
@@ -462,7 +463,7 @@ export const handler = async (event) => {
             continue;
         }
 
-        allMediaMessages.push({
+        allMessages.push({
             organization_id,
             account_id,
             gmb_id,
@@ -498,7 +499,14 @@ export const handler = async (event) => {
         );
     }
 
-    await SqsUtils.batchSendMessages(allMediaMessages, LayerConstants.GMB_MEDIA_SQS_QUEUE);
+    await SqsUtils.batchSendMessages(allMessages, LayerConstants.GMB_MEDIA_SQS_QUEUE);
+
+    // sasha
+    await SqsUtils.batchSendMessages(
+        allMessages,
+        "https://sqs.us-east-2.amazonaws.com/054037140239/processSyncingGMBPosts_queue",
+    );
+    // end sasha
 
     const endTime = Date.now();
     const executionTime = endTime - startTime;
