@@ -506,6 +506,11 @@ export const handler = async (event) => {
         allMessages,
         "https://sqs.us-east-2.amazonaws.com/054037140239/processSyncingGMBPosts_queue",
     );
+
+    await SqsUtils.batchSendMessages(
+        allMessages,
+        "https://sqs.us-east-2.amazonaws.com/054037140239/processSyncingGmbQuestions_queue",
+    );
     // end sasha
 
     const endTime = Date.now();
